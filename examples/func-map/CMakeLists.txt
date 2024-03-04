@@ -1,0 +1,18 @@
+cmake_minimum_required(VERSION 3.5)
+
+project(func-map LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+include_directories(
+    ../../include
+)
+
+add_executable(${PROJECT_NAME} main.cpp ../../include/ctmap/ctmap.hpp)
+
+include(GNUInstallDirs)
+install(TARGETS ${PROJECT_NAME}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)

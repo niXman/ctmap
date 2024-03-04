@@ -32,32 +32,32 @@
 #include <iterator>
 #include <stdexcept>
 
-/*************************************************************************************************/
-
 namespace ctmap {
 namespace details {
+
+/*************************************************************************************************/
+
+template<std::size_t...>
+struct integral_holder
+{};
+
+template<std::size_t A, std::size_t B, std::size_t... Accum>
+struct integral_range_: integral_range_<A+1, B, Accum..., A>
+{};
+
+template<std::size_t A, std::size_t... Accum>
+struct integral_range_<A, A, Accum...> {
+    using type = integral_holder<Accum...>;
+};
+
+template<std::size_t A, std::size_t B>
+using integral_range = typename integral_range_<A, B>::type;
 
 /*************************************************************************************************/
 
 template<std::size_t N, typename T, typename CmpLess = std::less<T>>
 struct sorted_vector {
 private:
-    template<std::size_t...>
-    struct integral_holder
-    {};
-
-    template<std::size_t A, std::size_t B, std::size_t... Accum>
-    struct integral_range_: integral_range_<A+1, B, Accum..., A>
-    {};
-
-    template<std::size_t A, std::size_t... Accum>
-    struct integral_range_<A, A, Accum...> {
-        using type = integral_holder<Accum...>;
-    };
-
-    template<std::size_t A, std::size_t B>
-    using integral_range = typename integral_range_<A, B>::type;
-
     template<typename U>
     static constexpr U mymin(U i) { return i; }
     template<typename U, typename... UU>
