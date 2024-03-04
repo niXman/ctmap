@@ -121,7 +121,7 @@ public:
     constexpr auto* begin() const noexcept { return nullptr; }
     constexpr auto* end  () const noexcept { return nullptr; }
 
-    constexpr auto& operator[](std::size_t /*i*/) const noexcept { throw std::invalid_argument("zero size vector!"); }
+    constexpr auto& operator[](std::size_t /*i*/) const { throw std::invalid_argument("zero size vector!"); }
 };
 
 /*************************************************************************************************/
