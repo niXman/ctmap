@@ -77,8 +77,8 @@ public:
     using cmp_less = CmpLess;
 
     template<typename... U>
-    constexpr sorted_vector(U... u)
-        :sorted_vector(integral_range<0, sizeof...(u)-1>(), mymin(u...), u...)
+    constexpr sorted_vector(U && ...u)
+        :sorted_vector(integral_range<0, sizeof...(u)-1>(), mymin(std::forward<U>(u)...), std::forward<U>(u)...)
     {}
 
     constexpr auto  size()  const noexcept { return N; }
@@ -152,7 +152,7 @@ template<
     ,typename K
     ,typename V
     ,typename CmpLess = std::less<std::pair<const K, V>>
-    ,typename Storage = details::sorted_vector<N, std::pair<K, V>, CmpLess>
+    ,typename Storage = details::sorted_vector<N, std::pair<const K, V>, CmpLess>
     >
 struct map {
     template<typename... Ts>
@@ -227,12 +227,12 @@ private:
 
 template<typename K, typename V, template<typename, typename> class ...Pairs>
 constexpr auto make_map(Pairs<K, V> && ...ts) {
-    return map<sizeof...(Pairs), K, V, std::less<std::pair<K, V>>>(std::forward<Pairs<K, V>>(ts)...);
+    return map<sizeof...(Pairs), K, V, std::less<std::pair<const K, V>>>(std::forward<Pairs<const K, V>>(ts)...);
 }
 
 template<typename CmpLess, typename K, typename V, template<typename, typename> class ...Pairs>
 constexpr auto make_map_cmp(CmpLess, Pairs<K, V> && ...ts) {
-    return map<sizeof...(Pairs), K, V, CmpLess>(std::forward<Pairs<K, V>>(ts)...);
+    return map<sizeof...(Pairs), K, V, CmpLess>(std::forward<Pairs<const K, V>>(ts)...);
 }
 
 /*************************************************************************************************/

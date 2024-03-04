@@ -70,11 +70,6 @@ void func3(const char *arg) { std::cout << "hello from func3, arg=" << arg << st
 /*************************************************************************************************/
 
 int main(int argc, char **argv) {
-    if ( argc != 2 ) {
-        std::cout << "usage: " << argv[0] << " func0/func1/func2/func3" << std::endl;
-        return EXIT_FAILURE;
-    }
-
     constexpr auto func0_name = string_holder{"func0"};
     constexpr auto func1_name = string_holder{"func1"};
     constexpr auto func2_name = string_holder{"func2"};
@@ -112,6 +107,13 @@ int main(int argc, char **argv) {
     std::cout << "loop:" << std::endl;
     for ( const auto &it: map ) {
         std::cout << it.first << " -> " << (const void *)it.second << std::endl;
+    }
+
+    if ( argc != 2 ) {
+        const char *p = std::strrchr(argv[0], '/');
+        p = (p) ? (p+1) : argv[0];
+        std::cout << "usage: ./" << p << " func0/func1/func2/func3" << std::endl;
+        return EXIT_FAILURE;
     }
 
     string_holder func_name{argv[1]};
