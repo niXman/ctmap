@@ -55,7 +55,7 @@ using integral_range = typename integral_range_<A, B>::type;
 
 /*************************************************************************************************/
 
-template<std::size_t N, typename T, typename CmpLess = std::less<T>>
+template<std::size_t N, typename T, typename CmpLess = std::less<T>, typename CmpEqual = std::equal_to<T>>
 struct sorted_vector {
 private:
     template<typename U>
@@ -68,13 +68,14 @@ private:
     template<std::size_t... II, typename... U>
     constexpr sorted_vector(integral_holder<II...> ii, T minval, T a, U... tt)
         :data{
-             (a == minval ? a : sorted_vector<N, T, CmpLess>(ii, minval, tt..., a).data[0])
-            ,(a == minval ? sorted_vector<N-1, T, CmpLess>(tt...)[II] : sorted_vector<N, T, CmpLess>(ii, minval, tt..., a).data[II+1])...
+             (CmpEqual{}(a, minval) ? a : sorted_vector<N, T, CmpLess, CmpEqual>(ii, minval, tt..., a).data[0])
+            ,(CmpEqual{}(a, minval) ? sorted_vector<N-1, T, CmpLess, CmpEqual>(tt...)[II] : sorted_vector<N, T, CmpLess, CmpEqual>(ii, minval, tt..., a).data[II+1])...
         }
     {}
 
 public:
     using cmp_less = CmpLess;
+    using cmp_equal = CmpEqual;
 
     template<typename... U>
     constexpr sorted_vector(U && ...u)
@@ -88,13 +89,14 @@ public:
     constexpr auto& operator[](std::size_t i) const noexcept { return data[i]; }
 };
 
-template<typename T, typename CmpLess>
-struct sorted_vector<1, T, CmpLess> {
+template<typename T, typename CmpLess, typename CmpEqual>
+struct sorted_vector<1, T, CmpLess, CmpEqual> {
 private:
     const T data[1];
 
 public:
     using cmp_less = CmpLess;
+    using cmp_equal = CmpEqual;
 
     constexpr sorted_vector(T x)
         :data{x}
@@ -107,12 +109,13 @@ public:
     constexpr auto& operator[](std::size_t i) const noexcept { return data[i]; }
 };
 
-template<typename T, typename CmpLess>
-struct sorted_vector<0, T, CmpLess> {
+template<typename T, typename CmpLess, typename CmpEqual>
+struct sorted_vector<0, T, CmpLess, CmpEqual> {
 private:
 
 public:
     using cmp_less = CmpLess;
+    using cmp_equal = CmpEqual;
 
     constexpr sorted_vector(T x)
     {}
@@ -132,9 +135,9 @@ constexpr auto make_sorted_vector(T && t, Ts && ...ts) {
         std::forward<T>(t), std::forward<Ts>(ts)...);
 }
 
-template<typename CmpLess, typename T, typename ...Ts>
-constexpr auto make_sorted_vector_cmp(CmpLess, T && t, Ts && ...ts) {
-    return details::sorted_vector<1 + sizeof...(Ts), T, CmpLess>(
+template<typename T, typename CmpLess, typename CmpEqual = std::equal_to<T>, typename ...Ts>
+constexpr auto make_sorted_vector_cmp(CmpLess, CmpEqual, T && t, Ts && ...ts) {
+    return details::sorted_vector<1 + sizeof...(Ts), T, CmpLess, CmpEqual>(
         std::forward<T>(t), std::forward<Ts>(ts)...);
 }
 
@@ -148,12 +151,13 @@ template<typename T>
 using optional_t = std::pair<bool, T>;
 
 template<
-    std::size_t N
+     std::size_t N
     ,typename K
     ,typename V
     ,typename CmpLess = std::less<std::pair<const K, V>>
-    ,typename Storage = details::sorted_vector<N, std::pair<const K, V>, CmpLess>
-    >
+    ,typename CmpEqual = std::equal_to<std::pair<const K, V>>
+    ,typename Storage = details::sorted_vector<N, std::pair<const K, V>, CmpLess, CmpEqual>
+>
 struct map {
     template<typename... Ts>
     constexpr map(Ts && ...ts)
@@ -197,9 +201,10 @@ template<
      typename K
     ,typename V
     ,typename CmpLess
+    ,typename CmpEqual
     ,typename Storage
 >
-struct map<1, K, V, CmpLess, Storage> {
+struct map<1, K, V, CmpLess, CmpEqual, Storage> {
     template<typename... Ts>
     constexpr map(Ts && ...ts)
         :vec{std::forward<Ts>(ts)...}
@@ -227,12 +232,15 @@ private:
 
 template<typename K, typename V, template<typename, typename> class ...Pairs>
 constexpr auto make_map(Pairs<K, V> && ...ts) {
-    return map<sizeof...(Pairs), K, V, std::less<std::pair<const K, V>>>(std::forward<Pairs<const K, V>>(ts)...);
+    using mapped_type = std::pair<const K, V>;
+    using cmp_less = std::less<mapped_type>;
+    using cmp_equal = std::equal_to<mapped_type>;
+    return map<sizeof...(Pairs), K, V, cmp_less, cmp_equal>(std::forward<Pairs<const K, V>>(ts)...);
 }
 
-template<typename CmpLess, typename K, typename V, template<typename, typename> class ...Pairs>
-constexpr auto make_map_cmp(CmpLess, Pairs<K, V> && ...ts) {
-    return map<sizeof...(Pairs), K, V, CmpLess>(std::forward<Pairs<const K, V>>(ts)...);
+template<typename CmpLess, typename CmpEqual, typename K, typename V, template<typename, typename> class ...Pairs>
+constexpr auto make_map_cmp(CmpLess, CmpEqual, Pairs<K, V> && ...ts) {
+    return map<sizeof...(Pairs), K, V, CmpLess, CmpEqual>(std::forward<Pairs<const K, V>>(ts)...);
 }
 
 /*************************************************************************************************/
