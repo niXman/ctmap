@@ -121,14 +121,14 @@ private:
     using StorageType = std::array<T, N>;
     StorageType m_data;
 
-    constexpr sorted_vector(const StorageType &arr)
-        :m_data{quicksort(arr, CmpLess{})}
+    constexpr sorted_vector(StorageType arr)
+        :m_data{quicksort(std::move(arr), CmpLess{})}
     {}
 
 public:
     template<typename ...U>
     constexpr sorted_vector(U ...elems)
-        :sorted_vector(StorageType{elems...})
+        :sorted_vector{StorageType{std::move(elems)...}}
     {}
 
     constexpr auto  size()  const noexcept { return N; }
@@ -136,6 +136,21 @@ public:
     constexpr auto* end  () const noexcept { return m_data.end(); }
 
     constexpr auto& operator[](std::size_t i) const noexcept { return m_data[i]; }
+
+    template<std::size_t NN, typename RCmpLess, typename CmpEqual>
+    constexpr bool equal(const sorted_vector<NN, T, RCmpLess> &r, const CmpEqual &cmp) const noexcept {
+        if constexpr ( N != NN ) {
+            return false;
+        } else {
+            for ( auto lit = begin(), rit = r.begin(); lit != end(); ++lit, ++rit ) {
+                if ( !cmp(*lit, *rit) ) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
 };
 
 template<typename T, typename CmpLess>
@@ -145,7 +160,7 @@ private:
 
 public:
     constexpr sorted_vector(T x)
-        :m_data{x}
+        :m_data{std::move(x)}
     {}
 
     constexpr auto  size()  const noexcept { return 1; }
@@ -153,6 +168,15 @@ public:
     constexpr auto* end  () const noexcept { return m_data.end(); }
 
     constexpr auto& operator[](std::size_t i) const noexcept { return m_data[i]; }
+
+    template<std::size_t NN, typename RCmpLess, typename CmpEqual>
+    constexpr bool equal(const sorted_vector<NN, T, RCmpLess> &r, const CmpEqual &cmp) const noexcept {
+        if constexpr ( 1 != NN ) {
+            return false;
+        }
+
+        return cmp(*(begin()), *(r.begin()));
+    }
 };
 
 template<typename T, typename CmpLess>
@@ -168,20 +192,24 @@ public:
     constexpr auto* end  () const noexcept { return nullptr; }
 
     constexpr auto& operator[](std::size_t /*i*/) const { throw std::invalid_argument("zero size vector!"); }
+
+    template<std::size_t NN, typename RCmpLess, typename CmpEqual>
+    constexpr bool equal(const sorted_vector<NN, T, RCmpLess> &/*r*/, const CmpEqual &/*cmp*/) const noexcept
+    { return 0 == NN; }
 };
 
 /*************************************************************************************************/
 
 template<typename T, typename ...Ts>
 constexpr auto make_sorted_vector(T && t, Ts && ...ts) {
-    return details::sorted_vector<1 + sizeof...(Ts), T>(
-        std::forward<T>(t), std::forward<Ts>(ts)...);
+    return details::sorted_vector<1 + sizeof...(Ts), T>{
+        std::forward<T>(t), std::forward<Ts>(ts)...};
 }
 
 template<typename T, typename CmpLess, typename ...Ts>
 constexpr auto make_sorted_vector_cmp(CmpLess, T && t, Ts && ...ts) {
-    return details::sorted_vector<1 + sizeof...(Ts), T, CmpLess>(
-        std::forward<T>(t), std::forward<Ts>(ts)...);
+    return details::sorted_vector<1 + sizeof...(Ts), T, CmpLess>{
+        std::forward<T>(t), std::forward<Ts>(ts)...};
 }
 
 /*************************************************************************************************/
@@ -209,12 +237,21 @@ struct map {
     constexpr auto* begin() const noexcept { return vec.begin(); }
     constexpr auto* end  () const noexcept { return vec.end  (); }
     constexpr auto  size () const noexcept { return vec.size();  }
+    constexpr const auto& storage() const noexcept { return vec; }
 
     constexpr optional_t<V> find(const K &k) const noexcept { return lower_bound(k); }
     constexpr bool contains(const K &k)      const noexcept { return lower_bound(k).first; }
 
     constexpr auto& operator[](std::size_t i) const noexcept { return vec[i]; }
 
+    template<std::size_t NN, typename RCmpLess, typename RStorage, typename CmpEqual>
+    constexpr bool equal(const map<NN, K, V, RCmpLess, RStorage> &r, const CmpEqual &cmp) const noexcept {
+        if constexpr ( N != NN ) {
+            return false;
+        } else {
+            return vec.equal(r.storage(), cmp);
+        }
+    }
 private:
     constexpr optional_t<V> lower_bound(const K &k) const noexcept {
         const auto *beg = vec.begin();
@@ -273,14 +310,18 @@ private:
 
 template<typename K, typename V, template<typename, typename> class ...Pairs>
 constexpr auto make_map(Pairs<K, V> && ...ts) {
-    using mapped_type = std::pair<K, V>;
-    using cmp_less = std::less<mapped_type>;
-    return map<sizeof...(Pairs), K, V, cmp_less>(std::forward<Pairs<K, V>>(ts)...);
+    using value_type = std::pair<K, V>;
+    struct cmp_less {
+        constexpr bool operator()(const value_type &l, const value_type &r)
+            const noexcept(noexcept(l.first < r.first))
+        { return l.first < r.first; }
+    };
+    return map<sizeof...(Pairs), K, V, cmp_less>{std::forward<Pairs<K, V>>(ts)...};
 }
 
 template<typename CmpLess, typename K, typename V, template<typename, typename> class ...Pairs>
 constexpr auto make_map_cmp(CmpLess, Pairs<K, V> && ...ts) {
-    return map<sizeof...(Pairs), K, V, CmpLess>(std::forward<Pairs<K, V>>(ts)...);
+    return map<sizeof...(Pairs), K, V, CmpLess>{std::forward<Pairs<K, V>>(ts)...};
 }
 
 /*************************************************************************************************/

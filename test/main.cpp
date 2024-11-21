@@ -55,11 +55,8 @@ int main(int argc, char **) {
         static_assert(vec[3] == 8, "");
     }
     {
-        using elem_type = std::pair<int, int>;
-        using cmp_less = pair_cmp_less;
-
         constexpr auto vec = ctmap::details::make_sorted_vector_cmp(
-             cmp_less{}
+             pair_cmp_less{}
             ,std::make_pair(3, 1)
             ,std::make_pair(6, 2)
             ,std::make_pair(1, 0)
@@ -81,11 +78,8 @@ int main(int argc, char **) {
     }
 
     {
-        using elem_type = std::pair<int, int>;
-        using cmp_less = pair_cmp_less;
-
         constexpr auto m = ctmap::make_map_cmp(
-             cmp_less{}
+             pair_cmp_less{}
             ,std::make_pair(1,0)
             ,std::make_pair(4,1)
             ,std::make_pair(2,2)
@@ -118,11 +112,8 @@ int main(int argc, char **) {
         static_assert(r5.second == 0, "");
     }
     {
-        using elem_type = std::pair<int, int>;
-        using cmp_less = pair_cmp_less;
-
         constexpr auto m = ctmap::make_map_cmp(
-             cmp_less{}
+             pair_cmp_less{}
             ,std::make_pair(1, 0)
         );
 
@@ -135,11 +126,8 @@ int main(int argc, char **) {
         static_assert(r5.second == 0, "");
     }
     {
-        using elem_type = std::pair<int, int>;
-        using cmp_less = pair_cmp_less;
-
         constexpr auto m0 = ctmap::make_map_cmp(
-             cmp_less{}
+             pair_cmp_less{}
             ,std::make_pair(1, 0)
             ,std::make_pair(4, 1)
             ,std::make_pair(2, 2)
@@ -178,17 +166,22 @@ int main(int argc, char **) {
         }
     }
     {
-        using elem_type = std::pair<int, int(*)(int)>;
-        using cmp_less = pair_cmp_less;
-
-        constexpr auto m0 = ctmap::make_map_cmp(
-             cmp_less{}
+        constexpr auto m0 = ctmap::make_map(
+             std::make_pair(1, func)
+            ,std::make_pair(4, func)
+            ,std::make_pair(2, func)
+            ,std::make_pair(5, func)
+            ,std::make_pair(3, func)
+        );
+        constexpr auto m1 = ctmap::make_map_cmp(
+             pair_cmp_less{}
             ,std::make_pair(1, func)
             ,std::make_pair(4, func)
             ,std::make_pair(2, func)
             ,std::make_pair(5, func)
             ,std::make_pair(3, func)
         );
+        static_assert(m0.equal(m1, [](const auto &l, const auto &r){ return l.first == r.first; }));
 
         std::cout << "2:" << std::endl;
         for ( const auto &it: m0 ) {
