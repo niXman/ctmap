@@ -108,10 +108,9 @@ constexpr void quicksort(Iterator left, Iterator right, Compare const &compare) 
 }
 
 template<typename Container, class Compare>
-constexpr Container quicksort(Container const &array, Compare const &compare) {
-    Container res = array;
-    quicksort(res.begin(), res.end() - 1, compare);
-    return res;
+constexpr Container quicksort(Container array, Compare const &compare) {
+    quicksort(array.begin(), array.end() - 1, compare);
+    return array;
 }
 
 /*************************************************************************************************/

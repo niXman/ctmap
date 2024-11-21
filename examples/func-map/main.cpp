@@ -29,36 +29,7 @@
 #include <iostream>
 #include <cassert>
 #include <cstring>
-
-/*************************************************************************************************/
-
-// because c++14 doesn't provide std::string_view
-struct string_holder {
-private:
-    std::size_t len;
-    const char *ptr;
-
-public:
-    template<std::size_t N>
-    constexpr string_holder(const char (&str)[N])
-        :len{N-1}
-        ,ptr{str}
-    {}
-    template<typename T, typename = typename std::enable_if<!std::is_array<T>::value>::type>
-    explicit string_holder(T str)
-        :len{std::strlen(str)}
-        ,ptr{str}
-    {}
-
-    friend constexpr bool operator< (const string_holder &l, const string_holder &r)
-    { return std::strcmp(l.ptr, r.ptr) < 0; }
-
-    friend constexpr bool operator== (const string_holder &l, const string_holder &r)
-    { return std::strcmp(l.ptr, r.ptr) == 0; }
-
-    friend std::ostream& operator<< (std::ostream &os, const string_holder &s)
-    { os.write(s.ptr, s.len); return os; }
-};
+#include <string_view>
 
 /*************************************************************************************************/
 
@@ -70,10 +41,10 @@ void func3(const char *arg) { std::cout << "hello from func3, arg=" << arg << st
 /*************************************************************************************************/
 
 int main(int argc, char **argv) {
-    constexpr auto func0_name = string_holder{"func0"};
-    constexpr auto func1_name = string_holder{"func1"};
-    constexpr auto func2_name = string_holder{"func2"};
-    constexpr auto func3_name = string_holder{"func3"};
+    constexpr auto func0_name = std::string_view{"func0"};
+    constexpr auto func1_name = std::string_view{"func1"};
+    constexpr auto func2_name = std::string_view{"func2"};
+    constexpr auto func3_name = std::string_view{"func3"};
 
     static constexpr auto map = ctmap::make_map(
          std::make_pair(func0_name, func0)
@@ -116,7 +87,7 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    string_holder func_name{argv[1]};
+    std::string_view func_name{argv[1]};
     auto it = map.find(func_name);
     if ( !it.first ) {
         std::cout << "wrong function name: " << func_name << std::endl;

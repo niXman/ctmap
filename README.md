@@ -1,2 +1,2 @@
 # ctmap
-C++14 compile-time map
+C++17 compile-time map
