@@ -33,18 +33,11 @@
 #   error "This file MUST be compiled with NDEBUG undefined!"
 #endif
 
-template<typename T>
 struct pair_cmp_less {
-    constexpr bool operator() (const T &l, const T &r)
+    template<typename T, typename U>
+    constexpr bool operator() (const T &l, const U &r)
         const noexcept(noexcept(l.first < r.first))
     { return l.first < r.first; }
-};
-
-template<typename T>
-struct pair_cmp_equal {
-    constexpr bool operator() (const T &l, const T &r)
-        const noexcept(noexcept(l.first < r.first))
-    { return l.first == r.first; }
 };
 
 int func(int v) { return v; }
@@ -63,12 +56,10 @@ int main(int argc, char **) {
     }
     {
         using elem_type = std::pair<int, int>;
-        using cmp_less = pair_cmp_less<elem_type>;
-        using cmp_equal = pair_cmp_equal<elem_type>;
+        using cmp_less = pair_cmp_less;
 
         constexpr auto vec = ctmap::details::make_sorted_vector_cmp(
              cmp_less{}
-            ,cmp_equal{}
             ,std::make_pair(3, 1)
             ,std::make_pair(6, 2)
             ,std::make_pair(1, 0)
@@ -91,12 +82,10 @@ int main(int argc, char **) {
 
     {
         using elem_type = std::pair<int, int>;
-        using cmp_less = pair_cmp_less<elem_type>;
-        using cmp_equal = pair_cmp_equal<elem_type>;
+        using cmp_less = pair_cmp_less;
 
         constexpr auto m = ctmap::make_map_cmp(
              cmp_less{}
-            ,cmp_equal{}
             ,std::make_pair(1,0)
             ,std::make_pair(4,1)
             ,std::make_pair(2,2)
@@ -130,12 +119,10 @@ int main(int argc, char **) {
     }
     {
         using elem_type = std::pair<int, int>;
-        using cmp_less = pair_cmp_less<elem_type>;
-        using cmp_equal = pair_cmp_equal<elem_type>;
+        using cmp_less = pair_cmp_less;
 
         constexpr auto m = ctmap::make_map_cmp(
              cmp_less{}
-            ,cmp_equal{}
             ,std::make_pair(1, 0)
         );
 
@@ -149,12 +136,10 @@ int main(int argc, char **) {
     }
     {
         using elem_type = std::pair<int, int>;
-        using cmp_less = pair_cmp_less<elem_type>;
-        using cmp_equal = pair_cmp_equal<elem_type>;
+        using cmp_less = pair_cmp_less;
 
         constexpr auto m0 = ctmap::make_map_cmp(
              cmp_less{}
-            ,cmp_equal{}
             ,std::make_pair(1, 0)
             ,std::make_pair(4, 1)
             ,std::make_pair(2, 2)
@@ -194,12 +179,10 @@ int main(int argc, char **) {
     }
     {
         using elem_type = std::pair<int, int(*)(int)>;
-        using cmp_less = pair_cmp_less<elem_type>;
-        using cmp_equal = pair_cmp_equal<elem_type>;
+        using cmp_less = pair_cmp_less;
 
         constexpr auto m0 = ctmap::make_map_cmp(
              cmp_less{}
-            ,cmp_equal{}
             ,std::make_pair(1, func)
             ,std::make_pair(4, func)
             ,std::make_pair(2, func)
